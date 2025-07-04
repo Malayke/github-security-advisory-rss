@@ -2,3 +2,4 @@ Flask==3.1.1
 feedgen==0.9.0
 requests==2.32.4
 python-dateutil==2.8.2
+markdown==3.8.2
