@@ -15,24 +15,120 @@ app = Flask(__name__)
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
-def json_to_html(data_list):
-    """Convert JSON data to HTML format for RSS content"""
+def json_to_html(advisory_data):
+    """Convert advisory data to HTML format for RSS content"""
     html_parts = []
-    for item in data_list:
-        if "packages" in item and item["packages"]:
-            html_parts.append("<h3>Affected Packages:</h3><ul>")
-            for pkg in item["packages"]:
-                ecosystem = escape(pkg.get("package", {}).get("ecosystem", "Unknown"))
-                name = escape(pkg.get("package", {}).get("name", "Unknown"))
-                html_parts.append(f"<li><strong>{ecosystem}:</strong> {name}</li>")
-            html_parts.append("</ul>")
-
-        if "cvss" in item and item["cvss"]:
-            cvss = item["cvss"]
-            if cvss:
-                score = cvss.get("score", "N/A")
-                vector = cvss.get("vector_string", "N/A")
-                html_parts.append(f"<h3>CVSS:</h3><p><strong>Score:</strong> {score}<br><strong>Vector:</strong> {vector}</p>")
+    
+    # Severity and CVE Information
+    if advisory_data.get("severity"):
+        severity = advisory_data["severity"].upper()
+        html_parts.append(f"<h3>Severity: {severity}</h3>")
+    
+    if advisory_data.get("cve"):
+        html_parts.append(f"<h3>CVE ID: {advisory_data['cve']}</h3>")
+    
+    if advisory_data.get("ghsa_id"):
+        html_parts.append(f"<h3>GHSA ID: {advisory_data['ghsa_id']}</h3>")
+    
+    # Affected Packages and Version Information
+    if advisory_data.get("vulnerabilities") and advisory_data["vulnerabilities"]:
+        html_parts.append("<h3>Affected Packages:</h3>")
+        for vuln in advisory_data["vulnerabilities"]:
+            if "package" in vuln:
+                pkg = vuln["package"]
+                ecosystem = escape(pkg.get("ecosystem", "Unknown"))
+                name = escape(pkg.get("name", "Unknown"))
+                html_parts.append(f"<h4>{ecosystem}: {name}</h4>")
+                
+                if vuln.get("vulnerable_version_range"):
+                    html_parts.append(f"<p><strong>Vulnerable Range:</strong> {escape(vuln['vulnerable_version_range'])}</p>")
+                
+                if vuln.get("first_patched_version"):
+                    html_parts.append(f"<p><strong>First Patched Version:</strong> {escape(vuln['first_patched_version'])}</p>")
+                
+                html_parts.append("<br>")
+    
+    # CVSS Information
+    if advisory_data.get("cvss_severities"):
+        html_parts.append("<h3>CVSS Scores:</h3>")
+        cvss_data = advisory_data["cvss_severities"]
+        
+        if cvss_data.get("cvss_v3"):
+            cvss_v3 = cvss_data["cvss_v3"]
+            score = cvss_v3.get("score", "N/A")
+            vector = cvss_v3.get("vector_string", "N/A")
+            html_parts.append(f"<p><strong>CVSS v3.1 Score:</strong> {score}<br><strong>Vector:</strong> {escape(vector)}</p>")
+        
+        if cvss_data.get("cvss_v4"):
+            cvss_v4 = cvss_data["cvss_v4"]
+            score = cvss_v4.get("score", "N/A")
+            vector = cvss_v4.get("vector_string", "N/A")
+            html_parts.append(f"<p><strong>CVSS v4.0 Score:</strong> {score}<br><strong>Vector:</strong> {escape(vector)}</p>")
+    elif advisory_data.get("cvss"):
+        # Fallback to old CVSS format
+        cvss = advisory_data["cvss"]
+        score = cvss.get("score", "N/A")
+        vector = cvss.get("vector_string", "N/A")
+        html_parts.append(f"<h3>CVSS:</h3><p><strong>Score:</strong> {score}<br><strong>Vector:</strong> {escape(vector)}</p>")
+    
+    # CWE Information
+    if advisory_data.get("cwes") and advisory_data["cwes"]:
+        html_parts.append("<h3>CWE (Common Weakness Enumeration):</h3><ul>")
+        for cwe in advisory_data["cwes"]:
+            cwe_id = cwe.get("cwe_id", "Unknown")
+            cwe_name = escape(cwe.get("name", "Unknown"))
+            html_parts.append(f"<li><strong>{cwe_id}:</strong> {cwe_name}</li>")
+        html_parts.append("</ul>")
+    
+    # References
+    if advisory_data.get("references") and advisory_data["references"]:
+        html_parts.append("<h3>References:</h3><ul>")
+        for ref in advisory_data["references"]:
+            html_parts.append(f"<li><a href='{escape(ref)}' target='_blank'>{escape(ref)}</a></li>")
+        html_parts.append("</ul>")
+    
+    # Identifiers
+    if advisory_data.get("identifiers") and advisory_data["identifiers"]:
+        html_parts.append("<h3>Identifiers:</h3><ul>")
+        for identifier in advisory_data["identifiers"]:
+            id_type = identifier.get("type", "Unknown")
+            id_value = identifier.get("value", "Unknown")
+            html_parts.append(f"<li><strong>{id_type}:</strong> {escape(id_value)}</li>")
+        html_parts.append("</ul>")
+    
+    # Timestamps
+    html_parts.append("<h3>Timeline:</h3>")
+    if advisory_data.get("published_at"):
+        try:
+            pub_date = parser.parse(advisory_data["published_at"])
+            html_parts.append(f"<p><strong>Published:</strong> {pub_date.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>")
+        except (ValueError, TypeError):
+            html_parts.append(f"<p><strong>Published:</strong> {escape(advisory_data['published_at'])}</p>")
+    
+    if advisory_data.get("updated_at"):
+        try:
+            update_date = parser.parse(advisory_data["updated_at"])
+            html_parts.append(f"<p><strong>Updated:</strong> {update_date.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>")
+        except (ValueError, TypeError):
+            html_parts.append(f"<p><strong>Updated:</strong> {escape(advisory_data['updated_at'])}</p>")
+    
+    if advisory_data.get("github_reviewed_at"):
+        try:
+            review_date = parser.parse(advisory_data["github_reviewed_at"])
+            html_parts.append(f"<p><strong>GitHub Reviewed:</strong> {review_date.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>")
+        except (ValueError, TypeError):
+            html_parts.append(f"<p><strong>GitHub Reviewed:</strong> {escape(advisory_data['github_reviewed_at'])}</p>")
+    
+    if advisory_data.get("nvd_published_at"):
+        try:
+            nvd_date = parser.parse(advisory_data["nvd_published_at"])
+            html_parts.append(f"<p><strong>NVD Published:</strong> {nvd_date.strftime('%Y-%m-%d %H:%M:%S UTC')}</p>")
+        except (ValueError, TypeError):
+            html_parts.append(f"<p><strong>NVD Published:</strong> {escape(advisory_data['nvd_published_at'])}</p>")
+    
+    # Source Code Location
+    if advisory_data.get("source_code_location"):
+        html_parts.append(f"<h3>Source Code:</h3><p><a href='{escape(advisory_data['source_code_location'])}' target='_blank'>{escape(advisory_data['source_code_location'])}</a></p>")
 
     return "".join(html_parts)
 
@@ -155,6 +251,18 @@ def get_github_advisories(query_params: dict) -> list[dict[str, any]]:
                     "packages": [p for p in d.get("vulnerabilities", [])],
                     "cvss": d.get("cvss"),
                     "pubdate": d.get("published_at"),
+                    # Additional fields for enhanced RSS content
+                    "vulnerabilities": d.get("vulnerabilities", []),
+                    "cvss_severities": d.get("cvss_severities", {}),
+                    "cwes": d.get("cwes", []),
+                    "references": d.get("references", []),
+                    "identifiers": d.get("identifiers", []),
+                    "published_at": d.get("published_at"),
+                    "updated_at": d.get("updated_at"),
+                    "github_reviewed_at": d.get("github_reviewed_at"),
+                    "nvd_published_at": d.get("nvd_published_at"),
+                    "source_code_location": d.get("source_code_location"),
+                    "withdrawn_at": d.get("withdrawn_at"),
                 }
                 for d in data
             ]
@@ -231,7 +339,7 @@ def generate_ghsa_rss(advisories: list[dict[str, str]], query_params: dict) -> s
 
             # Generate HTML content
             content_html = json_to_html(
-                [{"packages": adv.get("packages", []), "cvss": adv.get("cvss")}]
+                adv
             )
 
             if adv.get("content"):
