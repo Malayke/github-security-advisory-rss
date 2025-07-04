@@ -344,7 +344,7 @@ def generate_ghsa_rss(advisories: list[dict[str, str]], query_params: dict) -> s
 
             if adv.get("content"):
                 # Convert markdown to HTML
-                md_content = markdown.markdown(adv.get("content"))
+                md_content = markdown.markdown(adv.get("content"), extensions=['fenced_code', 'codehilite', 'tables', 'nl2br'])
                 content_html += f"<h3>Description:</h3>{md_content}"
 
             fe.content(content_html, type="CDATA")
