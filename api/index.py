@@ -289,8 +289,11 @@ def home():
         if readme_content is None:
             raise FileNotFoundError("README.md not found in any expected location")
         
-        # Convert markdown to HTML
-        html_content = markdown.markdown(readme_content)
+        # Convert markdown to HTML with extensions for proper code block handling
+        html_content = markdown.markdown(
+            readme_content,
+            extensions=['fenced_code', 'codehilite', 'tables', 'nl2br']
+        )
         
         # Wrap in basic HTML structure with SEO tags
         html_page = f"""
@@ -385,11 +388,29 @@ def home():
                     font-family: 'Monaco', 'Consolas', monospace;
                 }}
                 pre {{
-                    background-color: #f4f4f4;
+                    background-color: #f8f8f8;
                     padding: 15px;
                     border-radius: 5px;
                     overflow-x: auto;
                     border-left: 4px solid #3498db;
+                    margin: 15px 0;
+                }}
+                pre code {{
+                    background-color: transparent;
+                    padding: 0;
+                    border-radius: 0;
+                    font-size: 0.9em;
+                    color: #333;
+                }}
+                .codehilite {{
+                    background-color: #f8f8f8;
+                    border-radius: 5px;
+                    margin: 15px 0;
+                }}
+                .codehilite pre {{
+                    margin: 0;
+                    border-left: none;
+                    background-color: transparent;
                 }}
                 a {{
                     color: #3498db;
