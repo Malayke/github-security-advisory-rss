@@ -283,7 +283,9 @@ def rss():
         return Response("No advisories found", status=404)
     
     rss_feed = generate_ghsa_rss(advisories, query_params)
-    return Response(rss_feed, mimetype='application/rss+xml')
+    response = Response(rss_feed, mimetype='application/rss+xml')
+    response.headers['Cache-Control'] = 'public, s-maxage=600'
+    return response
 
 @app.errorhandler(404)
 def not_found(error):
