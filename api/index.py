@@ -269,9 +269,25 @@ def generate_ghsa_rss(advisories: list[dict[str, str]], query_params: dict) -> s
 @app.route('/')
 def home():
     try:
-        # Read the README.md file
-        with open('../README.md', 'r', encoding='utf-8') as f:
-            readme_content = f.read()
+        # Try multiple paths to find README.md
+        readme_paths = [
+            '../README.md',  # Original path
+            'README.md',     # Current directory
+            '/var/task/README.md',  # Vercel serverless path
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'README.md')  # Relative to this file
+        ]
+        
+        readme_content = None
+        for path in readme_paths:
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    readme_content = f.read()
+                    break
+            except FileNotFoundError:
+                continue
+        
+        if readme_content is None:
+            raise FileNotFoundError("README.md not found in any expected location")
         
         # Convert markdown to HTML
         html_content = markdown.markdown(readme_content)
