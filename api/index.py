@@ -206,7 +206,8 @@ def generate_ghsa_rss(advisories: list[dict[str, str]], query_params: dict) -> s
     fg.title(f"GitHub Security Advisory RSS Feed")
     fg.link(href=feed_url, rel="alternate")
     fg.subtitle(
-        "Security vulnerability database inclusive of CVEs and GitHub originated security advisories from the world of open source software."
+        "Security vulnerability database inclusive of CVEs and GitHub originated security advisories from the world of open source software. " +
+        "feedId:163880769874497536+userId:46228940824907776"
     )
     fg.link(href=feed_url, rel="self")
     fg.language("en")
