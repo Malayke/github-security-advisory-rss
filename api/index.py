@@ -324,6 +324,7 @@ def home():
             
             <!-- Additional SEO Tags -->
             <meta name="theme-color" content="#3498db">
+            <link rel="icon" type="image/svg+xml" href="/favicon.ico">
             <link rel="alternate" type="application/rss+xml" title="GitHub Security Advisory RSS Feed" href="https://github-security-advisory-rss.vercel.app/rss">
             
             <!-- Structured Data -->
@@ -433,6 +434,7 @@ def home():
             <meta name="description" content="Get real-time RSS feeds of GitHub Security Advisories with customizable filters for CVEs and security vulnerabilities.">
             <meta name="robots" content="index, follow">
             <link rel="canonical" href="https://github-security-advisory-rss.vercel.app/">
+            <link rel="icon" type="image/svg+xml" href="/favicon.ico">
             <style>
                 body {{
                     font-family: Arial, sans-serif;
@@ -467,6 +469,23 @@ def home():
 @app.route('/about')
 def about():
     return 'About'
+
+@app.route('/favicon.ico')
+def favicon():
+    # Simple security shield icon as SVG favicon
+    svg_icon = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#3498db">
+        <path d="M12 2L3 7v4c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"/>
+        <path d="M10 17l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="white"/>
+    </svg>'''
+    
+    # Convert SVG to data URI
+    import base64
+    svg_bytes = svg_icon.encode('utf-8')
+    svg_b64 = base64.b64encode(svg_bytes).decode('utf-8')
+    
+    response = Response(svg_bytes, mimetype='image/svg+xml')
+    response.headers['Cache-Control'] = 'public, max-age=86400'  # Cache for 1 day
+    return response
 
 @app.route('/rss')
 def rss():
