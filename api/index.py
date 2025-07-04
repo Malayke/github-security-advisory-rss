@@ -417,11 +417,13 @@ def home():
         </html>
         """
         
-        return html_page
+        response = Response(html_page, mimetype='text/html')
+        response.headers['Cache-Control'] = 'public, s-maxage=600'
+        return response
         
     except Exception as e:
         logger.error(f"Error reading README: {e}")
-        return f"""
+        error_page = f"""
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -457,6 +459,10 @@ def home():
         </body>
         </html>
         """
+        
+        response = Response(error_page, mimetype='text/html')
+        response.headers['Cache-Control'] = 'public, s-maxage=600'
+        return response
 
 @app.route('/about')
 def about():
