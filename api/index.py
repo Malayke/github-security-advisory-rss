@@ -268,7 +268,120 @@ def generate_ghsa_rss(advisories: list[dict[str, str]], query_params: dict) -> s
 
 @app.route('/')
 def home():
-    return 'Hello, World!'
+    try:
+        # Read the README.md file
+        with open('../README.md', 'r', encoding='utf-8') as f:
+            readme_content = f.read()
+        
+        # Convert markdown to HTML
+        html_content = markdown.markdown(readme_content)
+        
+        # Wrap in basic HTML structure
+        html_page = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>GitHub Security Advisory RSS Feed</title>
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #f8f9fa;
+                }}
+                .container {{
+                    background: white;
+                    padding: 30px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }}
+                h1, h2, h3 {{
+                    color: #2c3e50;
+                }}
+                h1 {{
+                    border-bottom: 2px solid #3498db;
+                    padding-bottom: 10px;
+                }}
+                code {{
+                    background-color: #f4f4f4;
+                    padding: 2px 4px;
+                    border-radius: 3px;
+                    font-family: 'Monaco', 'Consolas', monospace;
+                }}
+                pre {{
+                    background-color: #f4f4f4;
+                    padding: 15px;
+                    border-radius: 5px;
+                    overflow-x: auto;
+                    border-left: 4px solid #3498db;
+                }}
+                a {{
+                    color: #3498db;
+                    text-decoration: none;
+                }}
+                a:hover {{
+                    text-decoration: underline;
+                }}
+                .badge {{
+                    display: inline-block;
+                    margin-bottom: 20px;
+                }}
+                ul {{
+                    padding-left: 20px;
+                }}
+                li {{
+                    margin-bottom: 5px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                {html_content}
+            </div>
+        </body>
+        </html>
+        """
+        
+        return html_page
+        
+    except Exception as e:
+        logger.error(f"Error reading README: {e}")
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>GitHub Security Advisory RSS Feed</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #f8f9fa;
+                }}
+                .container {{
+                    background: white;
+                    padding: 30px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>GitHub Security Advisory RSS Feed</h1>
+                <p>A Flask-based RSS feed service that converts GitHub Security Advisories into RSS format.</p>
+                <p><strong>RSS Feed:</strong> <a href="/rss">/rss</a></p>
+                <p><strong>Health Check:</strong> <a href="/health">/health</a></p>
+            </div>
+        </body>
+        </html>
+        """
 
 @app.route('/about')
 def about():
