@@ -276,14 +276,68 @@ def home():
         # Convert markdown to HTML
         html_content = markdown.markdown(readme_content)
         
-        # Wrap in basic HTML structure
+        # Wrap in basic HTML structure with SEO tags
         html_page = f"""
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>GitHub Security Advisory RSS Feed</title>
+            
+            <!-- SEO Meta Tags -->
+            <title>GitHub Security Advisory RSS Feed - Real-time Security Vulnerability Updates</title>
+            <meta name="description" content="Get real-time RSS feeds of GitHub Security Advisories with customizable filters. Monitor CVEs, security vulnerabilities, and malware advisories across all ecosystems like npm, pip, maven, and more.">
+            <meta name="keywords" content="github security advisory, CVE, security vulnerabilities, RSS feed, security monitoring, vulnerability alerts, npm security, pip security, maven security, cybersecurity, GHSA">
+            <meta name="author" content="GitHub Security Advisory RSS Service">
+            <meta name="robots" content="index, follow">
+            <link rel="canonical" href="https://github-security-advisory-rss.vercel.app/">
+            
+            <!-- Open Graph Meta Tags -->
+            <meta property="og:title" content="GitHub Security Advisory RSS Feed - Real-time Security Updates">
+            <meta property="og:description" content="Get real-time RSS feeds of GitHub Security Advisories with customizable filters for CVEs and security vulnerabilities.">
+            <meta property="og:url" content="https://github-security-advisory-rss.vercel.app/">
+            <meta property="og:type" content="website">
+            <meta property="og:site_name" content="GitHub Security Advisory RSS">
+            <meta property="og:locale" content="en_US">
+            
+            <!-- Twitter Card Meta Tags -->
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:title" content="GitHub Security Advisory RSS Feed">
+            <meta name="twitter:description" content="Real-time RSS feeds for GitHub Security Advisories with customizable filters for CVEs and vulnerabilities.">
+            <meta name="twitter:creator" content="@github">
+            
+            <!-- Additional SEO Tags -->
+            <meta name="theme-color" content="#3498db">
+            <link rel="alternate" type="application/rss+xml" title="GitHub Security Advisory RSS Feed" href="https://github-security-advisory-rss.vercel.app/rss">
+            
+            <!-- Structured Data -->
+            <script type="application/ld+json">
+            {{
+                "@context": "https://schema.org",
+                "@type": "WebApplication",
+                "name": "GitHub Security Advisory RSS Feed",
+                "description": "Real-time RSS feed service for GitHub Security Advisories with customizable filtering options",
+                "url": "https://github-security-advisory-rss.vercel.app/",
+                "applicationCategory": "SecurityApplication",
+                "operatingSystem": "Web",
+                "offers": {{
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "USD"
+                }},
+                "creator": {{
+                    "@type": "Person",
+                    "name": "GitHub Security Advisory RSS Service"
+                }},
+                "featureList": [
+                    "Real-time GitHub Security Advisory RSS feeds",
+                    "Customizable filtering by severity, ecosystem, CVE ID",
+                    "Support for all GitHub API parameters",
+                    "Free deployment on Vercel",
+                    "RESTful API integration"
+                ]
+            }}
+            </script>
             <style>
                 body {{
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -353,9 +407,14 @@ def home():
         logger.error(f"Error reading README: {e}")
         return f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
-            <title>GitHub Security Advisory RSS Feed</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>GitHub Security Advisory RSS Feed - Real-time Security Vulnerability Updates</title>
+            <meta name="description" content="Get real-time RSS feeds of GitHub Security Advisories with customizable filters for CVEs and security vulnerabilities.">
+            <meta name="robots" content="index, follow">
+            <link rel="canonical" href="https://github-security-advisory-rss.vercel.app/">
             <style>
                 body {{
                     font-family: Arial, sans-serif;
