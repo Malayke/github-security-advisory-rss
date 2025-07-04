@@ -614,7 +614,7 @@ def favicon():
     svg_b64 = base64.b64encode(svg_bytes).decode('utf-8')
     
     response = Response(svg_bytes, mimetype='image/svg+xml')
-    response.headers['Cache-Control'] = 'public, max-age=86400'  # Cache for 1 day
+    response.headers['Cache-Control'] = 'public, s-max-age=86400'  # Cache for 1 day
     return response
 
 @app.route('/rss')
