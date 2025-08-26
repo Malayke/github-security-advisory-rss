@@ -8,6 +8,7 @@ from dateutil import parser
 from datetime import datetime, timezone
 from markupsafe import escape
 import markdown
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -15,17 +16,37 @@ app = Flask(__name__)
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
+def sanitize_xml_content(content):
+    """Sanitize content to be XML compatible by removing NULL bytes and control characters"""
+    if not content:
+        return content
+    
+    # Remove NULL bytes
+    content = content.replace('\x00', '')
+    
+    # Remove other control characters except allowed ones (tab, newline, carriage return)
+    # XML 1.0 allows only these control characters: #x9 | #xA | #xD
+    content = re.sub(r'[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]', '', content)
+    
+    # Ensure the content is properly encoded as UTF-8
+    if isinstance(content, str):
+        # Encode to bytes then decode to ensure proper UTF-8
+        content = content.encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
+    
+    return content
+
 def json_to_html(advisory_data):
     """Convert advisory data to HTML format for RSS content"""
     html_parts = []
     
     # Severity and CVE Information
     if advisory_data.get("severity"):
-        severity = advisory_data["severity"].upper()
+        severity = sanitize_xml_content(advisory_data["severity"].upper())
         html_parts.append(f"<h3>Severity: {severity}</h3>")
     
     if advisory_data.get("cve"):
-        html_parts.append(f"<h3>CVE ID: {advisory_data['cve']}</h3>")
+        cve_id = sanitize_xml_content(advisory_data['cve'])
+        html_parts.append(f"<h3>CVE ID: {cve_id}</h3>")
     
     # Affected Packages and Version Information
     if advisory_data.get("vulnerabilities") and advisory_data["vulnerabilities"]:
@@ -33,15 +54,17 @@ def json_to_html(advisory_data):
         for vuln in advisory_data["vulnerabilities"]:
             if "package" in vuln:
                 pkg = vuln["package"]
-                ecosystem = escape(pkg.get("ecosystem", "Unknown"))
-                name = escape(pkg.get("name", "Unknown"))
+                ecosystem = escape(sanitize_xml_content(pkg.get("ecosystem", "Unknown")))
+                name = escape(sanitize_xml_content(pkg.get("name", "Unknown")))
                 html_parts.append(f"<h4>{ecosystem}: {name}</h4>")
                 
                 if vuln.get("vulnerable_version_range"):
-                    html_parts.append(f"<p><strong>Vulnerable Range:</strong> {escape(vuln['vulnerable_version_range'])}</p>")
+                    version_range = escape(sanitize_xml_content(vuln['vulnerable_version_range']))
+                    html_parts.append(f"<p><strong>Vulnerable Range:</strong> {version_range}</p>")
                 
                 if vuln.get("first_patched_version"):
-                    html_parts.append(f"<p><strong>First Patched Version:</strong> {escape(vuln['first_patched_version'])}</p>")
+                    patched_version = escape(sanitize_xml_content(vuln['first_patched_version']))
+                    html_parts.append(f"<p><strong>First Patched Version:</strong> {patched_version}</p>")
                 
                 html_parts.append("<br>")
     
@@ -81,7 +104,8 @@ def json_to_html(advisory_data):
     if advisory_data.get("references") and advisory_data["references"]:
         html_parts.append("<h3>References:</h3><ul>")
         for ref in advisory_data["references"]:
-            html_parts.append(f"<li><a href='{escape(ref)}' target='_blank'>{escape(ref)}</a></li>")
+            sanitized_ref = escape(sanitize_xml_content(ref))
+            html_parts.append(f"<li><a href='{sanitized_ref}' target='_blank'>{sanitized_ref}</a></li>")
         html_parts.append("</ul>")
     
     # Identifiers
@@ -125,7 +149,8 @@ def json_to_html(advisory_data):
     
     # Source Code Location
     if advisory_data.get("source_code_location"):
-        html_parts.append(f"<h3>Source Code:</h3><p><a href='{escape(advisory_data['source_code_location'])}' target='_blank'>{escape(advisory_data['source_code_location'])}</a></p>")
+        source_location = escape(sanitize_xml_content(advisory_data['source_code_location']))
+        html_parts.append(f"<h3>Source Code:</h3><p><a href='{source_location}' target='_blank'>{source_location}</a></p>")
 
     return "".join(html_parts)
 
@@ -332,18 +357,24 @@ def generate_ghsa_rss(advisories: list[dict[str, str]], query_params: dict) -> s
                 f"[{adv.get('severity', '').upper()}]" if adv.get("severity") else ""
             )
             title = f"{cve_part}{severity_part} {adv.get('summary', '').strip()}"
+            # Sanitize the title for XML compatibility
+            title = sanitize_xml_content(title)
             fe.title(title)
             content_html = ""
             if adv.get("content"):
+                # Sanitize the markdown content first
+                sanitized_content = sanitize_xml_content(adv.get("content"))
                 # Convert markdown to HTML
-                md_content = markdown.markdown(adv.get("content"), extensions=['fenced_code', 'codehilite', 'tables', 'nl2br'])
+                md_content = markdown.markdown(sanitized_content, extensions=['fenced_code', 'codehilite', 'tables', 'nl2br'])
                 content_html += f"{md_content}"
             # Generate HTML content
-            content_html += json_to_html(
-                adv
-            )
+            additional_html = json_to_html(adv)
+            # Sanitize the additional HTML content
+            additional_html = sanitize_xml_content(additional_html)
+            content_html += additional_html
 
-
+            # Sanitize the final content before adding to RSS
+            content_html = sanitize_xml_content(content_html)
             fe.content(content_html, type="CDATA")
             fe.link(href=adv.get("url"))
 
@@ -621,6 +652,10 @@ def rss():
     
     if not advisories:
         return Response("No advisories found", status=404)
+    
+    print('--'*100)
+    print(advisories)
+    print('--'*100)
     
     rss_feed = generate_ghsa_rss(advisories, query_params)
     response = Response(rss_feed, mimetype='application/rss+xml')
