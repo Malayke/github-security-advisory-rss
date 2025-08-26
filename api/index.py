@@ -653,10 +653,6 @@ def rss():
     if not advisories:
         return Response("No advisories found", status=404)
     
-    print('--'*100)
-    print(advisories)
-    print('--'*100)
-    
     rss_feed = generate_ghsa_rss(advisories, query_params)
     response = Response(rss_feed, mimetype='application/rss+xml')
     response.headers['Cache-Control'] = 'public, s-maxage=600'
